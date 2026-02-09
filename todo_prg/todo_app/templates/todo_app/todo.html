@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do App Profesional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4070f4;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg-body: #f1f3f9;
+            --bg-card: #ffffff;
+            --text-main: #333;
+            --border: #ddd;
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            background: var(--bg-body);
+            padding: 40px 20px;
+        }
+
+        .container-app {
+            width: 100%;
+            max-width: 600px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        header { font-size: 24px; font-weight: 600; color: var(--text-main); margin-bottom: 20px; text-align: center; }
+
+        /* Estilos del formulario de entrada */
+        .input-field { display: flex; height: 50px; width: 100%; margin-bottom: 20px; }
+
+        .input-field input {
+            width: 85%;
+            height: 100%;
+            outline: none;
+            border: 1px solid var(--border);
+            border-radius: 5px 0 0 5px;
+            padding-left: 15px;
+            font-size: 17px;
+            transition: border 0.3s ease;
+        }
+
+        .input-field input:focus { border-color: var(--primary); }
+
+        .input-field button {
+            width: 15%; /* Botón cuadrado */
+            height: 100%;
+            border: none;
+            background: var(--primary);
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+            transition: background 0.3s ease;
+        }
+
+        .input-field button:hover { background-color: #265df2; }
+
+        /* Lista de tareas */
+        .todo-list { list-style: none; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+
+        .todo-item {
+            background: #f9f9f9;
+            border-bottom: 1px solid var(--border);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .todo-item:last-child { border-bottom: none; }
+        .todo-item:hover { background: #f0f0f0; }
+
+        .task-content { display: flex; flex-direction: column; }
+        .task-title { font-size: 16px; font-weight: 500; color: var(--text-main); }
+
+        /* Badges de estado */
+        .task-status {
+            font-size: 12px;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+        .status-progress { background-color: #fff3cd; color: #856404; } /* Amarillo */
+        .status-completed { background-color: #d4edda; color: #155724; } /* Verde */
+
+        /* Botones de acción */
+        .task-actions { display: flex; gap: 10px; }
+
+        .btn {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: white;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover { opacity: 0.8; }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+
+        /* Barra de scroll bonita */
+        .todo-list::-webkit-scrollbar { width: 5px; }
+        .todo-list::-webkit-scrollbar-track { background: #f1f1f1; }
+        .todo-list::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }
+
+        .logout-link { display: block; text-align: right; margin-bottom: 10px; font-size: 14px; }
+        .logout-link a { color: var(--danger); text-decoration: none; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+    <main class="container-app">
+        <div class="logout-link">
+            Hola, {{ request.user.username }} | <a href="{% url 'login' %}">Logout</a>
+        </div>
+
+        <header>Mis Tareas</header>
+
+        <form action="" method="POST" class="input-field">
+            {% csrf_token %} <input type="text" name="task" placeholder="Agrega una nueva tarea..." required>
+            <button type="submit">+</button>
+        </form>
+
+        <ul class="todo-list">
+
+            {% for todo in todos %}
+            <li class="todo-item">
+                <div class="task-content">
+                    <span class="task-title">{{ todo.todo_name }}</span>
+
+                    {% if todo.status == True %}
+                        <span class="task-status status-completed">Completado</span>
+                    {% else %}
+                        <span class="task-status status-progress">En progreso</span>
+                    {% endif %}
+                </div>
+
+                <div class="task-actions">
+    <a href="{% url 'update' todo.todo_name %}">
+        <button class="btn btn-sm btn-success">Hecho</button>
+    </a>
+
+    <a href="{% url 'delete' todo.todo_name %}">
+        <button class="btn btn-sm btn-danger">Borrar</button>
+    </a>
+</div>
+            </li>
+            {% empty %}
+            <li class="todo-item" style="justify-content: center; color: #777;">
+                No tienes tareas pendientes. ¡Agrega una!
+            </li>
+            {% endfor %}
+
+        </ul>
+    </main>
+
+</body>
+</html>
