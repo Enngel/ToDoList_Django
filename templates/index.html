@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taskly | Gestor de Tareas Premium</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Taskly</h1>
+            <p class="subtitle">Organiza tus proyectos con elegancia y simplicidad.</p>
+        </header>
+
+        <section class="add-list">
+            <div class="form-group">
+                <input type="text" id="newListInput" placeholder="Nombre de la nueva lista..." autocomplete="off">
+                <button onclick="createList()">
+                    <span>+</span> Nueva Lista
+                </button>
+            </div>
+        </section>
+
+        <main id="listGrid" class="list-grid">
+            <!-- Las listas se cargarán aquí dinámicamente -->
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = '/lists/';
+
+        async function fetchLists() {
+            try {
+                const response = await fetch(API_BASE);
+                const lists = await response.json();
+                renderLists(lists);
+            } catch (error) {
+                console.error('Error fetching lists:', error);
+            }
+        }
+
+        async function createList() {
+            const input = document.getElementById('newListInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            try {
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (response.ok) {
+                    input.value = '';
+                    fetchLists();
+                }
+            } catch (error) {
+                console.error('Error creating list:', error);
+            }
+        }
+
+        async function deleteList(listId) {
+            if (!confirm('¿Estás seguro de eliminar esta lista y todas sus tareas?')) return;
+            try {
+                await fetch(`${API_BASE}${listId}/`, { method: 'DELETE' });
+                fetchLists();
+            } catch (error) {
+                console.error('Error deleting list:', error);
+            }
+        }
+
+        async function createTask(listId) {
+            const input = document.getElementById(`taskInput-${listId}`);
+            const title = input.value.trim();
+            if (!title) return;
+
+            try {
+                const response = await fetch(`${API_BASE}${listId}/tasks/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title })
+                });
+                if (response.ok) {
+                    input.value = '';
+                    fetchLists();
+                }
+            } catch (error) {
+                console.error('Error creating task:', error);
+            }
+        }
+
+        async function toggleTask(listId, taskId, currentStatus) {
+            try {
+                await fetch(`${API_BASE}${listId}/tasks/${taskId}/`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completed: !currentStatus })
+                });
+                fetchLists();
+            } catch (error) {
+                console.error('Error toggling task:', error);
+            }
+        }
+
+        async function deleteTask(listId, taskId) {
+            try {
+                await fetch(`${API_BASE}${listId}/tasks/${taskId}/`, { method: 'DELETE' });
+                fetchLists();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+
+        function renderLists(lists) {
+            const grid = document.getElementById('listGrid');
+            if (lists.length === 0) {
+                grid.innerHTML = '<div class="empty-state">No tienes listas aún. ¡Crea una para comenzar!</div>';
+                return;
+            }
+
+            grid.innerHTML = lists.map(list => `
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3>${list.name}</h3>
+                        <button class="btn-danger btn-sm" onclick="deleteList(${list.id})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="tasks-container">
+                        ${list.tasks.map(task => `
+                            <div class="task-item ${task.completed ? 'completed' : ''}">
+                                <div class="task-checkbox ${task.completed ? 'checked' : ''}" 
+                                     onclick="toggleTask(${list.id}, ${task.id}, ${task.completed})">
+                                </div>
+                                <span onclick="toggleTask(${list.id}, ${task.id}, ${task.completed})">${task.title}</span>
+                                <div class="delete-task" onclick="deleteTask(${list.id}, ${task.id})">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1.5rem; margin-bottom: 0; padding: 0.5rem;">
+                        <input type="text" id="taskInput-${list.id}" placeholder="Nueva tarea..." 
+                               onkeypress="if(event.key === 'Enter') createTask(${list.id})">
+                        <button onclick="createTask(${list.id})" style="padding: 0.5rem 1rem;">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initial load
+        fetchLists();
+    </script>
+</body>
+</html>
